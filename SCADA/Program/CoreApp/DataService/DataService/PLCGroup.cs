@@ -402,7 +402,9 @@ namespace DataService
                 }
                 foreach (DataChangeEventHandler deleg in DataChange.GetInvocationList())
                 {
-                    deleg.BeginInvoke(this, new DataChangeEventArgs(1, values), null, null);
+
+                   // deleg.BeginInvoke(this, new DataChangeEventArgs(1, values), null, null);
+                    deleg.Invoke(this, new DataChangeEventArgs(1, values));
                 }
             }
             else
