@@ -539,7 +539,8 @@ namespace DataService
             }
             else
             {
-                result = (IPAddress.HostToNetworkOrder(_cache[startIndex]) << 16) | ((ushort)IPAddress.HostToNetworkOrder(_cache[startIndex + 1]));
+                //result = (IPAddress.HostToNetworkOrder(_cache[startIndex]) << 16) | ((ushort)IPAddress.HostToNetworkOrder(_cache[startIndex + 1]));
+                result = (IPAddress.HostToNetworkOrder(_cache[startIndex+1]) << 16) | ((ushort)IPAddress.HostToNetworkOrder(_cache[startIndex]));
             }
             return new ItemData<float>(*(((float*)&result)), 0, QUALITIES.QUALITY_GOOD);
         }
