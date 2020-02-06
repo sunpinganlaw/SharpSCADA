@@ -22,6 +22,7 @@ namespace BatchCoreService
 
     public class DAService :  IDataServer, IAlarmServer
     {
+      
         const int PORT = 6543;
 
         const char SPLITCHAR = '.';
@@ -377,6 +378,7 @@ namespace BatchCoreService
             //此处需改进,与Condition采用相同的处理方式，可配置
         }
 
+     
         void InitServerByDatabase()
         {
             using (var dataReader = DataHelper.Instance.ExecuteProcedureReader("InitServer", DataHelper.CreateParam("@TYPE", SqlDbType.Int, 0)))
@@ -518,6 +520,11 @@ namespace BatchCoreService
             _scales.Sort();
             _compare = new CompareCondBySource();
             _conditions.Sort(_compare);
+        }
+
+        private void DAService_testDataChange(string item)
+        {
+            Log.LogWarning(item);
         }
 
         void InitHost()
@@ -1301,6 +1308,7 @@ namespace BatchCoreService
 
         void grp_DataChange(object sender, DataChangeEventArgs e)
         {
+          
             var data = e.Values;
             var now = DateTime.Now;
             if (_hasHda)
@@ -1309,6 +1317,23 @@ namespace BatchCoreService
                 List<HistoryData> tempData = new List<HistoryData>(20);
                 for (int i = 0; i < data.Count; i++)
                 {
+                    
+                   TagMetaData itms =_list.Find(s => s.ID.Equals((data[i].ID)));
+                    if (itms.DataType == DataType.FLOAT)
+                    {
+
+                        Log.LogWarning(data[i].Value.Single.ToString());
+                    }
+                    if (itms.DataType == DataType.SHORT)
+                    {
+
+                        Log.LogWarning(data[i].Value.Int16.ToString());
+                    }
+                    if (itms.DataType == DataType.INT)
+                    {
+
+                        Log.LogWarning(data[i].Value.Int32.ToString());
+                    }
                     if (_archiveTimes.TryGetValue(data[i].ID, out archiveTime) && archiveTime == null && data[i].TimeStamp != DateTime.MinValue)
                     {
                         tempData.Add(data[i]);
