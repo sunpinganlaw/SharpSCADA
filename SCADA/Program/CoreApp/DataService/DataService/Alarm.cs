@@ -156,13 +156,24 @@ namespace DataService
         }
 
     }
-
+    /// <summary>
+    /// 【变化率报警=3（高，低，死区，延时，报警级别，EventType=4）】；【质量报警=5（延时，报警级别，EventType=4）】
+    /// </summary>
     [Flags]
     public enum AlarmType
     {
         None = 0,
+        /// <summary>
+        /// 差限报警（低，高，低低，高高，死区，延时，报警级别，EventType=4）
+        /// </summary>
         Level = 1,
+        /// <summary>
+        /// 偏差报警（上偏差，下偏差，死区，延时，参数 报警级别，EventType=4）
+        /// </summary>
         Dev = 2,
+        /// <summary>
+        /// 开关量报警(延时，正触发，负触发，报警级别，EventType=4）
+        /// </summary>
         Dsc = 4,
         ROC = 8,
         Quality = 16,
@@ -174,16 +185,45 @@ namespace DataService
     public enum SubAlarmType
     {
         None = 0,
+        /// <summary>
+        /// 低低（差限报警）
+        /// </summary>
         LoLo = 1,
+        /// <summary>
+        ///  低（差限报警）
+        /// </summary>
         Low = 2,
+        /// <summary>
+        /// 高（差限报警）
+        /// </summary>
         High = 4,
+        /// <summary>
+        /// 高高（差限报警）
+        /// </summary>
         HiHi = 8,
+        /// <summary>
+        /// 上偏差（偏差报警）
+        /// </summary>
         MajDev = 16,
+        /// <summary>
+        /// 下偏差（偏差报警）
+        /// </summary>
         MinDev = 32,
+        /// <summary>
+        /// 开关量报警（正触发=Threshold=1;负触发=Threshold=0）
+        /// </summary>
         Dsc = 64,
-
+        /// <summary>
+        /// 通信质量报警
+        /// </summary>
         BadPV = 128,
+        /// <summary>
+        /// 变化率报警（高）
+        /// </summary>
         MajROC = 256,
+        /// <summary>
+        /// 变化率报警（低）
+        /// </summary>
         MinROC = 512
     }
 
@@ -210,13 +250,22 @@ namespace DataService
     public enum EventType : byte
     {
         Simple = 1,
+        /// <summary>
+        /// 归档用
+        /// </summary>
         TraceEvent = 2,
         ConditionEvent = 4,
     }
 
     public enum ConditionType : byte
     {
+        /// <summary>
+        /// 绝对值（偏差报警用）
+        /// </summary>
         Absolute = 0,
+        /// <summary>
+        /// 百分比（偏差报警用）
+        /// </summary>
         Percent = 1
     }
 
