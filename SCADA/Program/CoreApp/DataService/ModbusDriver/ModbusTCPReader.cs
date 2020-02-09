@@ -262,6 +262,8 @@ namespace ModbusDriver
                         dv.Bit = (byte)(st % 16);
                         st /= 16;
                         dv.Start = st;
+
+                        dv.Bit--;
                     }
                     break;
                 case '1':
@@ -273,6 +275,8 @@ namespace ModbusDriver
                         dv.Bit = (byte)(st % 16);
                         st /= 16;
                         dv.Start = st;
+
+                        dv.Bit--;
                     }
                     break;
                 case '4':
@@ -554,80 +558,85 @@ namespace ModbusDriver
         {
             short[] cache = (short[])_cacheReader.Cache;
             int offset = 0;
-            foreach (PDUArea area in _rangeList)
+            lock (_server.SyncRoot)
             {
-                byte[] rcvBytes = _plcReader.ReadBytes(area.Start, (ushort)area.Len);//从PLC读取数据  
-                if (rcvBytes == null || rcvBytes.Length == 0)
+                foreach (PDUArea area in _rangeList)
                 {
-                    //_plcReader.Connect();
-                    return -1;
-                }
-                else
-                {
-                    int len = rcvBytes.Length / 2;
-                    fixed (byte* p1 = rcvBytes)
+                    byte[] rcvBytes = _plcReader.ReadBytes(area.Start, (ushort)area.Len);//从PLC读取数据  
+                    if (rcvBytes == null || rcvBytes.Length == 0)
                     {
-                        short* prcv = (short*)p1;
-                        int index = area.StartIndex;//index指向_items中的Tag元数据
-                        int count = index + area.Count;
-                        while (index < count)
+                        //_plcReader.Connect();
+                        return -1;
+                    }
+                    else
+                    {
+                        int len = rcvBytes.Length / 2;
+                        fixed (byte* p1 = rcvBytes)
                         {
-                            DeviceAddress addr = _items[index].Address;
-                            int iShort = addr.CacheIndex;
-                            int iShort1 = iShort - offset;
-                            if (addr.VarType == DataType.BOOL)
+                            short* prcv = (short*)p1;
+                            int index = area.StartIndex;//index指向_items中的Tag元数据
+                            int count = index + area.Count;
+                            while (index < count)
                             {
-                                int tmp = prcv[iShort1] ^ cache[iShort];
-                                DeviceAddress next = addr;
-                                if (tmp != 0)
+                                DeviceAddress addr = _items[index].Address;
+                                int iShort = addr.CacheIndex;
+                                int iShort1 = iShort - offset;
+                                if (addr.VarType == DataType.BOOL)
                                 {
-                                    while (addr.Start == next.Start)
+                                    int tmp = prcv[iShort1] ^ cache[iShort];
+                                    DeviceAddress next = addr;
+                                    if (tmp != 0)
                                     {
-                                        if ((tmp & (1 << next.Bit)) > 0) _changedList.Add(index);
-                                        if (++index < count)
-                                            next = _items[index].Address;
-                                        else
-                                            break;
-                                    }
-                                }
-                                else
-                                {
-                                    while (addr.Start == next.Start && ++index < count)
-                                    {
-                                        next = _items[index].Address;
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                if (addr.DataSize <= 2)
-                                {
-                                    if (prcv[iShort1] != cache[iShort]) _changedList.Add(index);
-                                }
-                                else
-                                {
-                                    int size = addr.DataSize / 2;
-                                    for (int i = 0; i < size; i++)
-                                    {
-                                        if (prcv[iShort1 + i] != cache[iShort + i])
+                                        while (addr.Start == next.Start)
                                         {
-                                            _changedList.Add(index);
-                                            break;
+                                            if ((tmp & (1 << next.Bit)) > 0) _changedList.Add(index);
+                                            if (++index < count)
+                                                next = _items[index].Address;
+                                            else
+                                                break;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        while (addr.Start == next.Start && ++index < count)
+                                        {
+                                            next = _items[index].Address;
                                         }
                                     }
                                 }
-                                index++;
+                                else
+                                {
+                                    if (addr.DataSize <= 2)
+                                    {
+                                        if (prcv[iShort1] != cache[iShort]) _changedList.Add(index);
+                                    }
+                                    else
+                                    {
+                                        int size = addr.DataSize / 2;
+                                        for (int i = 0; i < size; i++)
+                                        {
+                                            if (prcv[iShort1 + i] != cache[iShort + i])
+                                            {
+                                                _changedList.Add(index);
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    index++;
+                                }
                             }
+                            for (int j = 0; j < len; j++)
+                            {
+                                cache[j + offset] = prcv[j];
+                            }//将PLC读取的数据写入到CacheReader中
                         }
-                        for (int j = 0; j < len; j++)
-                        {
-                            cache[j + offset] = prcv[j];
-                        }//将PLC读取的数据写入到CacheReader中
+                        offset += len;
                     }
-                    offset += len;
                 }
+                return 1;
+
             }
-            return 1;
+              
         }
 
     }
