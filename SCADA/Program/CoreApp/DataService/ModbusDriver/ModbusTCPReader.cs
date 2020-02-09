@@ -152,51 +152,57 @@ namespace ModbusDriver
             }
             return data;
         }
-
+        object _async = new object();
         private byte[] WriteSyncData(byte[] write_data)
         {
             short id = BitConverter.ToInt16(write_data, 0);
             if (IsClosed) CallException(id, write_data[7], Modbus.excExceptionConnectionLost);
             else
             {
-                try
+                lock (_async)
                 {
-                    tcpSynCl.Send(write_data, 0, write_data.Length, SocketFlags.None);//是否存在lock的问题？
-                    int result = tcpSynCl.Receive(tcpSynClBuffer, 0, 0xFF, SocketFlags.None);
-
-                    byte function = tcpSynClBuffer[7];
-                    byte[] data;
-
-                    if (result == 0) CallException(id, write_data[7], Modbus.excExceptionConnectionLost);
-
-                    // ------------------------------------------------------------
-                    // Response data is slave ModbusModbus.exception
-                    if (function > Modbus.excExceptionOffset)
+                    try
                     {
-                        function -= Modbus.excExceptionOffset;
-                        CallException(id, function, tcpSynClBuffer[8]);
-                        return null;
+                        tcpSynCl.Send(write_data, 0, write_data.Length, SocketFlags.None);//是否存在lock的问题？
+                        int result = tcpSynCl.Receive(tcpSynClBuffer, 0, 0xFF, SocketFlags.None);
+
+                        byte function = tcpSynClBuffer[7];
+                        byte[] data;
+
+                        if (result == 0) CallException(id, write_data[7], Modbus.excExceptionConnectionLost);
+
+                        // ------------------------------------------------------------
+                        // Response data is slave ModbusModbus.exception
+                        if (function > Modbus.excExceptionOffset)
+                        {
+                            function -= Modbus.excExceptionOffset;
+                            CallException(id, function, tcpSynClBuffer[8]);
+                            return null;
+                        }
+                        // ------------------------------------------------------------
+                        // Write response data
+                        else if ((function >= Modbus.fctWriteSingleCoil) && (function != Modbus.fctReadWriteMultipleRegister))
+                        {
+                            data = new byte[2];
+                            Array.Copy(tcpSynClBuffer, 10, data, 0, 2);
+                        }
+                        // ------------------------------------------------------------
+                        // Read response data
+                        else
+                        {
+                            data = new byte[tcpSynClBuffer[8]];
+                            Array.Copy(tcpSynClBuffer, 9, data, 0, tcpSynClBuffer[8]);
+                        }
+                        return data;
                     }
-                    // ------------------------------------------------------------
-                    // Write response data
-                    else if ((function >= Modbus.fctWriteSingleCoil) && (function != Modbus.fctReadWriteMultipleRegister))
+                    catch (SocketException)
                     {
-                        data = new byte[2];
-                        Array.Copy(tcpSynClBuffer, 10, data, 0, 2);
+                        CallException(id, write_data[7], Modbus.excExceptionConnectionLost);
                     }
-                    // ------------------------------------------------------------
-                    // Read response data
-                    else
-                    {
-                        data = new byte[tcpSynClBuffer[8]];
-                        Array.Copy(tcpSynClBuffer, 9, data, 0, tcpSynClBuffer[8]);
-                    }
-                    return data;
+
+
                 }
-                catch (SocketException)
-                {
-                    CallException(id, write_data[7], Modbus.excExceptionConnectionLost);
-                }
+              
             }
             return null;
         }
@@ -558,84 +564,81 @@ namespace ModbusDriver
         {
             short[] cache = (short[])_cacheReader.Cache;
             int offset = 0;
-            lock (_server.SyncRoot)
+            foreach (PDUArea area in _rangeList)
             {
-                foreach (PDUArea area in _rangeList)
+                byte[] rcvBytes = _plcReader.ReadBytes(area.Start, (ushort)area.Len);//从PLC读取数据  
+                if (rcvBytes == null || rcvBytes.Length == 0)
                 {
-                    byte[] rcvBytes = _plcReader.ReadBytes(area.Start, (ushort)area.Len);//从PLC读取数据  
-                    if (rcvBytes == null || rcvBytes.Length == 0)
+                    //_plcReader.Connect();
+                    return -1;
+                }
+                else
+                {
+                    int len = rcvBytes.Length / 2;
+                    fixed (byte* p1 = rcvBytes)
                     {
-                        //_plcReader.Connect();
-                        return -1;
-                    }
-                    else
-                    {
-                        int len = rcvBytes.Length / 2;
-                        fixed (byte* p1 = rcvBytes)
+                        short* prcv = (short*)p1;
+                        int index = area.StartIndex;//index指向_items中的Tag元数据
+                        int count = index + area.Count;
+                        while (index < count)
                         {
-                            short* prcv = (short*)p1;
-                            int index = area.StartIndex;//index指向_items中的Tag元数据
-                            int count = index + area.Count;
-                            while (index < count)
+                            DeviceAddress addr = _items[index].Address;
+                            int iShort = addr.CacheIndex;
+                            int iShort1 = iShort - offset;
+                            if (addr.VarType == DataType.BOOL)
                             {
-                                DeviceAddress addr = _items[index].Address;
-                                int iShort = addr.CacheIndex;
-                                int iShort1 = iShort - offset;
-                                if (addr.VarType == DataType.BOOL)
+                                int tmp = prcv[iShort1] ^ cache[iShort];
+                                DeviceAddress next = addr;
+                                if (tmp != 0)
                                 {
-                                    int tmp = prcv[iShort1] ^ cache[iShort];
-                                    DeviceAddress next = addr;
-                                    if (tmp != 0)
+                                    while (addr.Start == next.Start)
                                     {
-                                        while (addr.Start == next.Start)
-                                        {
-                                            if ((tmp & (1 << next.Bit)) > 0) _changedList.Add(index);
-                                            if (++index < count)
-                                                next = _items[index].Address;
-                                            else
-                                                break;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        while (addr.Start == next.Start && ++index < count)
-                                        {
+                                        if ((tmp & (1 << next.Bit)) > 0) _changedList.Add(index);
+                                        if (++index < count)
                                             next = _items[index].Address;
-                                        }
+                                        else
+                                            break;
                                     }
                                 }
                                 else
                                 {
-                                    if (addr.DataSize <= 2)
+                                    while (addr.Start == next.Start && ++index < count)
                                     {
-                                        if (prcv[iShort1] != cache[iShort]) _changedList.Add(index);
+                                        next = _items[index].Address;
                                     }
-                                    else
-                                    {
-                                        int size = addr.DataSize / 2;
-                                        for (int i = 0; i < size; i++)
-                                        {
-                                            if (prcv[iShort1 + i] != cache[iShort + i])
-                                            {
-                                                _changedList.Add(index);
-                                                break;
-                                            }
-                                        }
-                                    }
-                                    index++;
                                 }
                             }
-                            for (int j = 0; j < len; j++)
+                            else
                             {
-                                cache[j + offset] = prcv[j];
-                            }//将PLC读取的数据写入到CacheReader中
+                                if (addr.DataSize <= 2)
+                                {
+                                    if (prcv[iShort1] != cache[iShort]) _changedList.Add(index);
+                                }
+                                else
+                                {
+                                    int size = addr.DataSize / 2;
+                                    for (int i = 0; i < size; i++)
+                                    {
+                                        if (prcv[iShort1 + i] != cache[iShort + i])
+                                        {
+                                            _changedList.Add(index);
+                                            break;
+                                        }
+                                    }
+                                }
+                                index++;
+                            }
                         }
-                        offset += len;
+                        for (int j = 0; j < len; j++)
+                        {
+                            cache[j + offset] = prcv[j];
+                        }//将PLC读取的数据写入到CacheReader中
                     }
+                    offset += len;
                 }
-                return 1;
-
             }
+            return 1;
+
               
         }
 
