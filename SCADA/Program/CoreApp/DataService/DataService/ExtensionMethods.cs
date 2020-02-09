@@ -418,7 +418,8 @@ namespace DataService
 
         public static int BitSwap(this byte bit)
         {
-            return (bit < 8 ? bit + 8 : bit - 8);
+            //return (bit < 8 ? bit + 8 : bit - 8);
+            return (bit < 8 ? bit : bit - 8);
         }
 
         [Obsolete]
