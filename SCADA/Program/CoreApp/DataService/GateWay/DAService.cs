@@ -1321,18 +1321,30 @@ namespace BatchCoreService
                    TagMetaData itms =_list.Find(s => s.ID.Equals((data[i].ID)));
                     if (itms.DataType == DataType.FLOAT)
                     {
-
-                        Log.LogWarning(data[i].Value.Single.ToString());
+                        int index = GetItemProperties(data[i].ID);
+                        string name = _list[index].Name;
+                        Log.LogWarning(name+":-->"+data[i].Value.Single.ToString());
                     }
                     if (itms.DataType == DataType.SHORT)
                     {
 
-                        Log.LogWarning(data[i].Value.Int16.ToString());
+                        int index = GetItemProperties(data[i].ID);
+                        string name = _list[index].Name;
+                        Log.LogWarning(name + ":-->" + data[i].Value.Int16.ToString());
                     }
                     if (itms.DataType == DataType.INT)
                     {
 
-                        Log.LogWarning(data[i].Value.Int32.ToString());
+                        int index = GetItemProperties(data[i].ID);
+                        string name = _list[index].Name;
+                        Log.LogWarning(name + ":-->" + data[i].Value.Int32.ToString());
+                    }
+                    if (itms.DataType == DataType.BOOL)
+                    {
+
+                        int index = GetItemProperties(data[i].ID);
+                        string name = _list[index].Name;
+                        Log.LogWarning(name + ":-->" + data[i].Value.Boolean.ToString());
                     }
                     if (_archiveTimes.TryGetValue(data[i].ID, out archiveTime) && archiveTime == null && data[i].TimeStamp != DateTime.MinValue)
                     {
