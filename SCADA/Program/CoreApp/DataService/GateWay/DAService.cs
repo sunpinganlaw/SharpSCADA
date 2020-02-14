@@ -445,8 +445,10 @@ namespace BatchCoreService
                         cond = _conditions[_conditions.Count - 1];
                         if (cond.ID == id)
                         {
+                            //cond.AddSubCondition(new SubCondition((SubAlarmType)dataReader.GetInt32(9), dataReader.GetFloat(10),
+                            //    (Severity)dataReader.GetByte(11), dataReader.GetString(12), dataReader.GetBoolean(13)));
                             cond.AddSubCondition(new SubCondition((SubAlarmType)dataReader.GetInt32(9), dataReader.GetFloat(10),
-                                (Severity)dataReader.GetByte(11), dataReader.GetString(12), dataReader.GetBoolean(13)));
+                            Severity.High, dataReader.GetString(12), dataReader.GetBoolean(13)));
                             continue;
                         }
                     }
@@ -475,8 +477,10 @@ namespace BatchCoreService
                             cond = new DigitAlarm(id, source, dataReader.GetString(6), dataReader.GetInt32(8));
                             break;
                     }
+                    //cond.AddSubCondition(new SubCondition((SubAlarmType)dataReader.GetInt32(9), dataReader.GetFloat(10),
+                    //           (Severity)dataReader.GetByte(11), dataReader.GetString(12), dataReader.GetBoolean(13)));
                     cond.AddSubCondition(new SubCondition((SubAlarmType)dataReader.GetInt32(9), dataReader.GetFloat(10),
-                               (Severity)dataReader.GetByte(11), dataReader.GetString(12), dataReader.GetBoolean(13)));
+                              Severity.High, dataReader.GetString(12), dataReader.GetBoolean(13)));
 
                     cond.IsEnabled = dataReader.GetBoolean(3);
                     var simpcond = cond as SimpleCondition;
@@ -1671,6 +1675,9 @@ namespace BatchCoreService
         {
             lock (_alarmsync)
             {
+
+                Log.LogWarning(e.Source + ":-->报警---->>>" + e.AlarmText.ToString());
+
                 int index2 = _conditions.BinarySearch(new DigitAlarm(0, e.Source), _compare);
                 if (index2 > -1)
                 {
