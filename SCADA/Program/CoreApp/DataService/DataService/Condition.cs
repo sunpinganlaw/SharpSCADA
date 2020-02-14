@@ -482,7 +482,8 @@ namespace DataService
                     {
                         foreach (AlarmEventHandler deleg in AlarmActive.GetInvocationList())
                         {
-                            deleg.BeginInvoke(this, _current, null, null);
+                          //deleg.BeginInvoke(this, _current, null, null);
+                            deleg.Invoke(this, _current);
                         }
                     }
                     if (PropertyChanged != null)
@@ -512,7 +513,8 @@ namespace DataService
                 {
                     foreach (AlarmEventHandler deleg in AlarmActive.GetInvocationList())
                     {
-                        deleg.BeginInvoke(this, _current, null, null);
+                        //deleg.BeginInvoke(this, _current, null, null);
+                        deleg.Invoke(this, _current);
                     }
                 }
             }
