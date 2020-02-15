@@ -475,7 +475,8 @@ namespace DatabaseLib
                         m_Conn.Open();
                     }
                     cmd.ExecuteNonQuery();
-                    return (int)param.Value;
+                    return 1;
+                    //return (int)param.Value;
                 }
                 catch (Exception e)
                 {
