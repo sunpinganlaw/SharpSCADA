@@ -61,7 +61,7 @@ namespace DatabaseLib
 
         public static bool GetRangeFromDatabase(short? ID, ref DateTime start, ref DateTime end)
         {
-            using (var reader = DataHelper.Instance.ExecuteReader("SELECT MIN(TIMESTAMP),MAX(TIMESTAMP) FROM LOG_HDATA" + (ID.HasValue ? " WHERE ID=" + ID.Value : "")))
+            using (var reader = DataHelper.Instance.ExecuteReader("SELECT MIN(TIMESTAMPS),MAX(TIMESTAMPS) FROM LOG_HDATA" + (ID.HasValue ? " WHERE ID=" + ID.Value : "")))
             {
                 if (reader != null)
                 {
@@ -85,7 +85,7 @@ namespace DatabaseLib
             {
                 if (WriteToFile(date.AddDays(-1)) == 0)
                 {
-                    DataHelper.Instance.ExecuteNonQuery(string.Format("DELETE FROM LOG_HDATA WHERE [TIMESTAMP]<='{0}';", date.ToShortDateString()));
+                    DataHelper.Instance.ExecuteNonQuery(string.Format("DELETE FROM LOG_HDATA WHERE TIMESTAMPS<='{0}';", date.ToShortDateString()));
                 }
             }
         }
