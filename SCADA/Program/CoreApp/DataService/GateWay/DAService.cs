@@ -1487,8 +1487,8 @@ namespace BatchCoreService
                 var dvType = ass.GetType(className);
                 if (dvType != null)
                 {
-                    dv = new ModbusDriver.ModbusTCPReader(this, id, name, server, timeOut,"1");
-                    //dv = Activator.CreateInstance(dvType, new object[] { this, id, name, server, timeOut, spare1, spare2 }) as IDriver;
+                    //dv = new ModbusDriver.ModbusTCPReader(this, id, name, server, timeOut,"1");
+                    dv = Activator.CreateInstance(dvType, new object[] { this, id, name, server, timeOut, spare1, spare2 }) as IDriver;
                     if (dv != null)
                         _drivers.Add(id, dv);
                 }
