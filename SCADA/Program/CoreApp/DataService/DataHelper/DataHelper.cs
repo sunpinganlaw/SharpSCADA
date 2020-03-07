@@ -18,8 +18,10 @@ namespace DatabaseLib
         static string m_host = Environment.MachineName;
         static string m_type = "MSSQL";
         //数据库工厂接口  
-        const string CFGPATH = @"C:\DataConfig\host.cfg";
-        const string INIPATH = @"C:\DataConfig\host.ini";
+        //const string CFGPATH = @"C:\DataConfig\host.cfg";
+        //const string INIPATH = @"C:\DataConfig\host.ini";
+        const string CFGPATH = @"/home/pi/scada/host.cfg";
+        const string INIPATH = @"/home/pi/scada/host.ini";
         const string DATALOGSOURCE = "Data Operations";
         const string DATALOGNAME = "Data Log";
         const int STRINGMAX = 255;
@@ -63,8 +65,10 @@ namespace DatabaseLib
             Log = loggerFactory.CreateLogger(DATALOGSOURCE);
             try
             {
+                Console.WriteLine("GateWay Is loggerFactory");
                 if (File.Exists(INIPATH))
                 {
+                    Console.WriteLine("GateWay Is INIPATH");
                     var builder = new ConfigurationBuilder();
                     var ibuild = builder.AddIniFile(INIPATH);
                     var root = ibuild.Build();
