@@ -182,10 +182,10 @@ namespace BatchCoreService
         {
             var loggerFactory = new LoggerFactory();
             Func<string, LogLevel, bool> filter = (category, level) => true;
-            loggerFactory.AddProvider( new ConsoleLoggerProvider(filter, false));
+            loggerFactory.AddProvider(new ConsoleLoggerProvider(filter, false));
             loggerFactory.AddProvider(new DebugLoggerProvider(filter));
             Log = loggerFactory.CreateLogger(SERVICELOGSOURCE);
-            InitServerByXml(); 
+            InitServerByXml();
             _scales = new List<Scaling>();
             _drivers = new SortedList<short, IDriver>();
             _alarmList = new List<AlarmItem>(ALARMLIMIT + 10);
@@ -382,8 +382,10 @@ namespace BatchCoreService
      
         void InitServerByDatabase()
         {
+            Console.WriteLine("GateWay Is InitServerByDatabase");
             using (var dataReader = DataHelper.Instance.ExecuteProcedureReader("InitServer", DataHelper.CreateParam("@TYPE", SqlDbType.Int, 0)))
             {
+                Console.WriteLine("GateWay Connetto  database successfully");
                 if (dataReader == null) return;// Stopwatch sw = Stopwatch.StartNew();
                 while (dataReader.Read())
                 {
