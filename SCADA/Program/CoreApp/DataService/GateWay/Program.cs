@@ -7,7 +7,9 @@ namespace GateWay
     {
         static void Main(string[] args)
         {
+            
             Console.WriteLine("GateWay Is Running");
+            Logger.Log.Debug("sdsdsd");
             DAService dataService = new DAService();
             Console.ReadLine();
             //while (true)
